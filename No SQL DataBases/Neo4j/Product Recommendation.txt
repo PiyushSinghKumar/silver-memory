@@ -1,0 +1,117 @@
+USER STORY 1 - As a customer, Thomas wants relevant book recommendations whenever he buys a book from the App. 
+
+//Load JSON - Books Data
+
+CALL apoc.load.json("file:///BooksData.json")
+YIELD value AS data
+MERGE (n1:Book {name: data.title, rating: toFloat(data.average_rating), price: toFloat(data.Price), id:data.bookID}) 
+MERGE (n2:Author {name: data.authors}) 
+MERGE (n3:Language{name: data.language})
+MERGE (n4:Genre{name: data.Genre})
+MERGE (n1)-[r1:WRITTEN_BY]->(n2)
+MERGE (n1)-[r2:BOOK_LANGUAGE]->(n3)
+MERGE (n1)-[r3:BOOK_CATEGORY]->(n4)
+RETURN *
+
+
+//Recommendation-books (Content based Recommendation)
+
+MATCH (n1:Book{name:"Harry Potter and the Half-Blood Prince (Harry Potter  #6)"}) 
+MATCH (n1)-[:WRITTEN_BY]->(n2:Author)<-[:WRITTEN_BY]-(rec:Book) 
+MATCH (n1)-[:BOOK_CATEGORY]->(n4:Genre)<-[:BOOK_CATEGORY]-(rec:Book)
+MATCH (n1)-[:BOOK_LANGUAGE]->(n3:Language) <-[:BOOK_LANGUAGE]-(rec:Book)
+WHERE rec.rating > 4.0 
+RETURN rec
+LIMIT 2
+
+
+
+
+USER STORY 2 - As a customer, Annie would like the App to show personalised recommendations based on what other similar customers are buying. 
+
+// Load Product Data
+
+LOAD CSV WITH HEADERS FROM 'file:///products.csv' AS prod
+MERGE (n2:Product{name: prod.ProductName, id:prod.ProductID, price:toFloat(prod.Price), discountedprice: toFloat(prod.Discounted_Price), country:prod.Country,ratings:toFloat(prod.Ratings), inventory:toInteger(prod.Inventory)}) 
+RETURN *
+
+// Load Customer Data
+
+LOAD CSV WITH HEADERS FROM 'file:///customers.csv' AS cust 
+MERGE (n1:Customer{name:cust.Customer_Name, country:cust.Customer_Country, id:cust.Customer_id}) 
+RETURN *
+
+// Load Orders Data
+
+LOAD CSV WITH HEADERS FROM 'file:///OrdersData.csv' AS orders 
+MATCH (n1:Customer {id:orders.CustomerID }) 
+MATCH (n2:Product {id: orders.ProdID})
+MERGE (n1)-[:BOUGHT{invoice:orders.InvoiceNo}]->(n2)
+RETURN *
+
+// Recommendation based on collaborative filtering(what other customers are buying)
+
+MATCH (n1:Customer{name: "Annie Mucklestone"})
+MATCH (n1)-[:BOUGHT]->(n2:Product)<-[:BOUGHT]- (u:Customer)-[:BOUGHT]->(rec:Product)
+WHERE NOT (n1)-[:BOUGHT]->(rec)
+AND n1.country=rec.country
+AND rec.inventory > 0
+RETURN rec.name AS Recommendation, rec.price AS Price ,COUNT(*) AS score ORDER BY score DESC
+LIMIT 2
+
+
+
+
+USER STORY 3 - The customer Nicola would like to see some product discounts /offers based on her recent likes and views on the App. 
+
+Data Source: https://www.kaggle.com/retailrocket/ecommerce-dataset?select=events.csv
+
+#R Code for Data Cleaning and Random Sampling
+
+data <- read.csv("events.csv", header=T) 
+summary(data) 
+sum(is.na(data$event)) 
+data <- data[!is.na(data$event),] 
+A <- round(0.01*length(data$event)) 
+sampledata <- data[sample(nrow(data), A[1]),]
+summary(sampledata)
+likesdata <- subset(sampledata,data$event=="addtocart",)
+viewsdata <- subset(sampledata,data$event=="view",)
+write.csv(likesdata,"likes.csv")
+write.csv(viewsdata,"views.csv") 
+
+
+
+// Load Customer Likes Data on Neo4j
+
+LOAD CSV WITH HEADERS FROM 'file:///likes.csv' AS likes 
+MATCH (n1:Customer {id:likes.visitorid }) 
+MATCH (n2:Product {id: likes.itemid})
+MERGE (n1)-[:ADD_TO_WISHLIST]->(n2)
+RETURN *
+
+
+// Load Customer Views Data
+
+LOAD CSV WITH HEADERS FROM 'file:///views.csv' AS views 
+MATCH (n1:Customer {id:views.visitorid }) 
+MATCH (n2:Product {id: views.itemid})
+MERGE (n1)-[:VIEWED]->(n2)
+RETURN *
+
+
+// Product Promotion on the basis of views and likes of customer
+
+MATCH (n1:Customer{name:"Nicola Haggerty"})
+MATCH (n1)-[:VIEWED]->(n2:Product)<-[:ADD_TO_WISHLIST]-(n1)
+WHERE NOT (n1)-[:BOUGHT]->(n2)
+AND n2.inventory>0
+RETURN n1.name AS Customer,n2.name AS Recommended_Product,n2.price AS Actual_Price,n2.discountedprice AS Discounted_Price
+
+
+// Product Promotion on the basis of overall product views
+
+MATCH (n2:Product),(n1:Customer)
+MATCH (n1)-[:VIEWED]->(n2)
+RETURN n2.name AS Product_Name, COUNT(*) AS views, n2.price AS Actual_Price, n2.discountedprice AS Discounted_Price
+ORDER BY views DESC LIMIT 3
