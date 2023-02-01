@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interview Screener</title>
+    <style>
+        .form-center {
+                       display:flex;
+                       justify-content: center;
+        }
+        body {
+            background-color: #DBF9FC;
+        }
+    </style>
+  <h1 align="center">HushHush Recruiter</h1>
+    <br>
+</head>
+<body>
+<div class="form-center">
+
+<form action="/data" method = "POST">
+    <p>Name &nbsp;&nbsp;&nbsp;<input id="Name" type = "text" name = "Name" /></p>
+    <p>City &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="City" type = "text" name = "City" /></p>
+    <p>Country <input id="Country" type = "text" name = "Country" /></p>
+    <h>Please answer the below questions:</h>
+    <p>1.What is asymptotic analysis of an algorithm? <br><input id="Question1" type = "text" name = "Question1" /></p>
+    <p>2.What is the prefix and post fix notation of (a + b) * (c + d) ?<br> <input id="Question2" type = "text" name = "Question2" /></p>
+    <p>3.What is hashing?<br> <input id="Question3" type = "text" name = "Question3" /></p>
+    <p>4.Write a Pseudocode to sort a list of your choice? <br>  <textarea id="Question4" type = "text" name = "Question4" width="100" height="100" ></textarea></p>
+    <p>5.Explain time and space complexity of your code above?<br>   <input id="Question5" type = "text" name = "Question5" /></p>
+    <p><input type = "submit" value = "Submit" /></p>
+</form>
+</div>
+</body>
+</html>
