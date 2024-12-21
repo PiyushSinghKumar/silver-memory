@@ -29,20 +29,24 @@ def save_image(image, output_image, image_format):
 def save_exr(image, output_image):
     height, width, channels = image.shape
     header = OpenEXR.Header(width, height)
-    header['channels'] = {'R': Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT)),
-                          'G': Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT)),
-                          'B': Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT))}
+    header["channels"] = {
+        "R": Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT)),
+        "G": Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT)),
+        "B": Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT)),
+    }
     exr = OpenEXR.OutputFile(output_image, header)
     r = (image[:, :, 0].astype(np.float32) / 255.0).tobytes()
     g = (image[:, :, 1].astype(np.float32) / 255.0).tobytes()
     b = (image[:, :, 2].astype(np.float32) / 255.0).tobytes()
-    exr.writePixels({'R': r, 'G': g, 'B': b})
+    exr.writePixels({"R": r, "G": g, "B": b})
     exr.close()
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Create test images")
-    parser.add_argument("-o", "--output-folder", type=str, default=".", help="Output folder")
+    parser.add_argument(
+        "-o", "--output-folder", type=str, default=".", help="Output folder"
+    )
     parser.add_argument("-s", "--size", type=int, default=256, help="Size of the image")
     parser.add_argument("-f", "--format", type=str, default="exr", help="Image format")
     args = parser.parse_args()
@@ -58,6 +62,7 @@ def main():
 
     image = create_image(size, image_format)
     save_image(image, output_image, image_format)
+
 
 if __name__ == "__main__":
     main()
